@@ -45,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadUserData = async () => {
     try {
       const userData = await authService.getCurrentUser();
+      console.log('User data loaded:', userData);
       setUser(userData);
     } catch (error) {
       console.error('Error loading user data:', error);

@@ -19,7 +19,7 @@ export const authService = {
       password,
       options: {
         data: {
-          name
+          full_name: name
         }
       }
     });
@@ -37,21 +37,48 @@ export const authService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const { data: userData, error } = await supabase
-      .from('users')
-      .select(`
-        *,
-        departments(name)
-      `)
+    // Primeiro verifica se o perfil existe
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
       .eq('id', user.id)
       .single();
 
-    if (error) throw error;
+    if (profileError && profileError.code !== 'PGRST116') {
+      throw profileError;
+    }
+
+    // Se não existe perfil, cria um
+    if (!profile) {
+      const { data: newProfile, error: createError } = await supabase
+        .from('profiles')
+        .insert([{
+          id: user.id,
+          email: user.email!,
+          full_name: user.user_metadata?.full_name || user.email!.split('@')[0],
+          role: 'user'
+        }])
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      
+      return {
+        id: user.id,
+        email: user.email!,
+        name: newProfile.full_name,
+        role: newProfile.role,
+        is_active: newProfile.is_active
+      };
+    }
 
     return {
-      ...userData,
+      id: user.id,
       email: user.email,
-      department_name: userData.departments?.name
+      name: profile.full_name,
+      role: profile.role,
+      is_active: profile.is_active,
+      department_name: profile.department
     };
   }
 };

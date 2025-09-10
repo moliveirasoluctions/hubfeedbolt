@@ -18,9 +18,11 @@ export default function Login() {
     setLoading(true);
 
     try {
+      console.log('Attempting login with:', formData.email);
       await login(formData.email, formData.password);
       toast.success('Login realizado com sucesso!');
     } catch (error: any) {
+      console.error('Login error:', error);
       toast.error(error.message || 'Erro ao fazer login');
     } finally {
       setLoading(false);
